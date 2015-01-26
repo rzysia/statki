@@ -1,3 +1,4 @@
+#!/usr/bin/python
 '''
 Created on 8 sty 2015
 

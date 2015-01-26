@@ -1,3 +1,4 @@
+#!/usr/bin/python
 '''
 Created on 12 sty 2015
 @author: Krzysztof
