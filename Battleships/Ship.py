@@ -42,8 +42,10 @@ class Ship:
     def changeOrientation(self):
         if self.orientation == 1:
             self.setOrientationHorizontal()
+            self.image = pygame.transform.rotate(self.image, 90)
         else:
             self.setOrientationVertical()
+            self.image = pygame.transform.rotate(self.image, 270)
         
         
         

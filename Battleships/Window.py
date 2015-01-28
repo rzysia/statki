@@ -18,7 +18,7 @@ aiBoardEndPoint = (aiBoardBeginPoint[0] + 450, aiBoardBeginPoint[1] + 450)
 singleRectWidth = 45
 singleRectHeight = 45
 
-class Battleships(object):
+class Battleships:
     
     def __init__(self):
         pygame.init()
@@ -201,7 +201,7 @@ class Battleships(object):
                 return False
         
         for f in fields:
-            if not f.content == None:
+            if not self.playerBoard.checkField(f.getId()):
                 return False
         
         for f in fields:

@@ -25,8 +25,44 @@ class Board:
             for field in fieldList:
                 if field.getId() == fieldId:
                     return field
-        return None        
-                
+        return None     
+    
+    def checkField(self, fieldId):
+        field = self.getFieldById(fieldId)
+        if not field.content == None:
+            return False
+        return self.checkNeighbors(fieldId)
+    
+    def checkNeighbors(self, fieldId):
+        posX,posY = int(fieldId[0]),int(fieldId[1])
+        if posX > 0:
+            if not self.getFieldById("{0}{1}".format(posX-1,posY)).content == None:
+                return False            
+        if posX < 9:
+            if not self.getFieldById("{0}{1}".format(posX+1,posY)).content == None:
+                return False            
+        if posY > 0:
+            if not self.getFieldById("{0}{1}".format(posX,posY-1)).content == None:
+                return False            
+        if posY < 9:
+            if not self.getFieldById("{0}{1}".format(posX,posY+1)).content == None:
+                return False
+            
+        if posY < 9 and posX < 9:
+            if not self.getFieldById("{0}{1}".format(posX+1,posY+1)).content == None:
+                return False    
+        if posY > 0 and posX > 0:
+            if not self.getFieldById("{0}{1}".format(posX-1,posY-1)).content == None:
+                return False
+        if posY > 0 and posX < 9:
+            if not self.getFieldById("{0}{1}".format(posX+1,posY-1)).content == None:
+                return False
+        if posY < 9 and posX > 0:
+            if not self.getFieldById("{0}{1}".format(posX-1,posY+1)).content == None:
+                return False
+            
+        
+        return True        
                 
 
 class TestBoard(unittest.TestCase):
