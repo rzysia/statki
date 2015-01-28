@@ -10,6 +10,7 @@ from sys import exit
 from Board import Board
 from Ship import Ship
 from pygame.constants import K_SPACE
+from AI import AI
 
 screen_size = (1215, 510)
 playerBoardBeginPoint = (29, 31)
@@ -28,7 +29,8 @@ class Battleships:
         self.gamestate = 1    
         
         #do napisow
-        self.headerFont = pygame.font.SysFont("Arial", 25, 1)    
+        self.headerFont = pygame.font.SysFont("Arial", 25, 1)   
+        self.tipField = pygame.font.SysFont("Arial", 15, 1); 
         
         self.playerBoard = Board()
         self.aiBoard = Board()
@@ -38,6 +40,7 @@ class Battleships:
         #do trzymania oznaczen na obu plansach - trafione i pudla
         #na liscie beda pudla
         self.shotsOnTarget = []
+        self.playerShotsOnTarget = []
         self.missedShots = []
         
         #ladujemy obrazki
@@ -45,6 +48,11 @@ class Battleships:
         self.explode = pygame.image.load('img/exp3.png')
 #         self.ships = [Ship(1, 1040, 80), Ship(2, 1130, 70), Ship(3, 1040, 250), Ship(4, 1130, 230)]
         self.ships = []
+        self.listOfShips = []
+        self.currentShip = None
+        
+#         print self.aiBoard.fields[0]
+        AI(self.aiBoard)
         
         self.explodeFrames = [None] * 8
         self.explodeFrameRect = pygame.Rect(0,0,40,40)
@@ -59,9 +67,11 @@ class Battleships:
         
         
     def loop(self):
-        listOfShips = [Ship(4),Ship(3),Ship(3),Ship(2),Ship(2),Ship(2),Ship(1),Ship(1),Ship(1),Ship(1), None]
-        currentShip = listOfShips.pop(0)
-        while self.gamestate == 1:
+        self.listOfShips = [Ship(4),Ship(3),Ship(3),Ship(2),Ship(2),Ship(2),Ship(1),Ship(1),Ship(1),Ship(1), None]
+        self.currentShip = self.listOfShips.pop(0)
+        while not self.gamestate == 0:
+            
+            self.checkGamestate()
             
             pair = self.getFieldByMousePosition(pygame.mouse.get_pos())
                 
@@ -69,12 +79,19 @@ class Battleships:
             
             self.drawShips()
             
-            if currentShip != None:
-                self.surface.blit(self.headerFont.render('Trwa ustawianie statkow', True, (10,10,10)), (1030, 200))
-                if self.drawShipUnderMouse(pygame.mouse.get_pos(), currentShip, pair) and len(listOfShips) > 0:
-                    currentShip = listOfShips.pop(0)
+            if self.currentShip != None:
+                self.setBeginTip(pair)
+            elif not self.gamestate == 0 and not self.gamestate == 1:
+                winner = 'Gracz!'
+                if self.gamestate == 2:
+                    winner = 'Gracz komputerowy!'
+                self.surface.blit(self.tipField.render('Koniec gry!', True, (10,10,10)), (1030, 200))
+                self.surface.blit(self.tipField.render('Zwyciezyl', True, (10,10,10)), (1030, 220))
+                self.surface.blit(self.tipField.render(winner, True, (10,10,10)), (1030, 240))               
+                self.drawShots()            
+                self.animateExplode()
             else:
-                self.surface.blit(self.headerFont.render('Gra rozpoczeta', True, (10,10,10)), (1030, 200))               
+                self.surface.blit(self.tipField.render('Gra rozpoczeta', True, (10,10,10)), (1030, 200))               
                 self.drawShots()            
                 self.animateExplode()
             
@@ -92,6 +109,16 @@ class Battleships:
             pygame.display.flip()
             
         self.gameExit()
+        
+    def setBeginTip(self, pair):
+        tipText = ['Aby ustawic statek,','kliknij w wybrane pole.','', 'Aby obrocic statek,','wcisnij spacje.']
+        beginHeight = 200
+        for tip in tipText:
+            self.surface.blit(self.tipField.render(tip, True, (10,10,10)), (1030, beginHeight))
+            beginHeight = beginHeight + 20
+        if self.drawShipUnderMouse(pygame.mouse.get_pos(), self.currentShip, pair) and len(self.listOfShips) > 0:
+            self.currentShip = self.listOfShips.pop(0)
+        
   
     
     def getFieldByMousePosition(self, position):
@@ -128,15 +155,21 @@ class Battleships:
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 self.gamestate = 0
-            if event.type == pygame.MOUSEBUTTONDOWN and pair != None:
-                if pair[0].content == None:                  
+            if event.type == pygame.MOUSEBUTTONDOWN and pair != None and self.gamestate == 1:
+                if pair[0].content == None and pair[1] == aiBoardBeginPoint:                  
                     if not self.checkIfPresentOnList(self.missedShots, pair[0]):                    
                         self.missedShots.append(pair)
                 else:
-                    if not self.checkIfPresentOnList(self.shotsOnTarget, pair[0]):
-                        self.explodeActualFrame = 0
-                        self.explodeField = pair
-                        self.shotsOnTarget.append(pair)
+                    if pair[1] == aiBoardBeginPoint:
+                        if not self.checkIfPresentOnList(self.playerShotsOnTarget, pair[0]):
+                            self.explodeActualFrame = 0
+                            self.explodeField = pair
+                            self.playerShotsOnTarget.append(pair)
+#                     else:                        
+#                         if not self.checkIfPresentOnList(self.shotsOnTarget, pair[0]):
+#                             self.explodeActualFrame = 0
+#                             self.explodeField = pair
+#                             self.shotsOnTarget.append(pair)
                 
                     
                 
@@ -162,6 +195,12 @@ class Battleships:
             
             pygame.draw.line(self.surface, (255,0,0), coordsBSstart, coordsBSend, 5)
             pygame.draw.line(self.surface, (255,0,0), (coordsBSstart[0],coordsBSend[1]), (coordsBSend[0],coordsBSstart[1]), 5)
+        for pair in self.playerShotsOnTarget:
+            coordsBSstart = pair[0].getCoords(pair[1]) 
+            coordsBSend = [x + 45 for x in pair[0].getCoords(pair[1])]
+            
+            pygame.draw.line(self.surface, (255,0,0), coordsBSstart, coordsBSend, 5)
+            pygame.draw.line(self.surface, (255,0,0), (coordsBSstart[0],coordsBSend[1]), (coordsBSend[0],coordsBSstart[1]), 5)
             
     
     def drawShips(self):
@@ -175,7 +214,7 @@ class Battleships:
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 self.gamestate = 0
-            if event.type == pygame.MOUSEBUTTONDOWN and pair[1][0] < playerBoardEndPoint[0]:
+            if event.type == pygame.MOUSEBUTTONDOWN and pair is not None and pair[1][0] < playerBoardEndPoint[0] and self.gamestate == 1:
                 if self.setContent(pair,ship):
                     ship.setCoords(pair[0].getCoords(pair[1]))
                     self.ships.append(ship)
@@ -209,6 +248,14 @@ class Battleships:
             f.content = "anything"            
             
         return True
+    
+    def checkGamestate(self):
+        hittedFieldsNumber = len(self.shotsOnTarget)
+        playerHittedFieldsNumber = len(self.playerShotsOnTarget)
+        if hittedFieldsNumber == 20:
+            self.gamestate = 2
+        if playerHittedFieldsNumber == 20:
+            self.gamestate = 3
     
        
     def animateExplode(self):

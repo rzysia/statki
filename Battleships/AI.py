@@ -3,9 +3,10 @@ Created on 22 sty 2015
 
 @author: Krzysztof
 '''
-from Board import Board
-import Ship
 import random
+
+import Board
+from Ship import Ship
 
 
 class AI:
@@ -15,11 +16,11 @@ class AI:
         self.fillBoard(board)
         
     def fillBoard(self, board):
-        listOfShips = [Ship(4),Ship(3),Ship(3),Ship(2),Ship(2),Ship(2),Ship(1),Ship(1),Ship(1),Ship(1), None]
-        currentShip = listOfShips.pop(0)
+        listOfShipsAI = [Ship(4),Ship(3),Ship(3),Ship(2),Ship(2),Ship(2),Ship(1),Ship(1),Ship(1),Ship(1), None]
+        currentShip = listOfShipsAI.pop(0)
         while not currentShip == None:
             self.putShip(board, currentShip)
-            currentShip = listOfShips.pop(0)
+            currentShip = listOfShipsAI.pop(0)
             
     def putShip(self, board, ship):    
         if random.randint(1,10)%2 == 1:
@@ -54,4 +55,7 @@ class AI:
         return True  
     
     def getRandomField(self):
-        pass        
+        x = random.randint(0,9)
+        y = random.randint(0,9)
+        fieldToRet = self.board.getFieldById("{0}{1}".format(x,y))  
+        return fieldToRet
